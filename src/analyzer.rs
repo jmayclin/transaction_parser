@@ -77,7 +77,22 @@ pub fn settle(lot_open: &mut Lot, lot_close: &mut Lot) -> i32 {
     profit
 }
 
-pub fn profit_loss(transactions: Vec<(Commodity, Lot)>) -> i32 {
+pub fn settlement_table(settlements: &Vec<Settlement>) {
+    println!("{:^8} | {:^8} | {:^25} | {:^9}", "open", "close", "symbol", "PnL");
+    println!("{:-^8}-+-{:-^8}-+-{:-^25}-+-{:-^9}", "", "", "", "");
+    for settle in settlements {
+        println!(
+            "{} | {} | {:<25} | ${:>5}.{:02}",
+            settle.open,
+            settle.close,
+            format!("{}", settle.commodity),
+            settle.profit / 10000,
+            settle.profit % 10000 / 100
+        );
+    }
+}
+
+pub fn profit_loss(transactions: Vec<(Commodity, Lot)>) -> (i32, Vec<Settlement>) {
     let mut settlements = Vec::new();
     let mut book: HashMap<Commodity, Vec<Lot>> = HashMap::new();
     let mut profit = 0;
@@ -103,20 +118,8 @@ pub fn profit_loss(transactions: Vec<(Commodity, Lot)>) -> i32 {
         if lot.quantity.abs() != 0 {
             entry.push(lot);
         }
-        //println!("\tBook for {:?} is {:?}", &commodity, &entry);
     }
-    for settle in settlements {
-        println!(
-            "{} | {} | {:<25} | ${:>5}.{:02}",
-            settle.open,
-            settle.close,
-            format!("{}", settle.commodity),
-            settle.profit / 10000,
-            settle.profit % 10000 / 100
-        );
-    }
-    println!("total profit: {}", profit);
-    profit
+    (profit, settlements)
 }
 
 #[cfg(test)]

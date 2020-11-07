@@ -4,6 +4,8 @@ pub mod analyzer;
 
 use std::fmt;
 
+pub const STARTING_EQUITY: i32 = 33282000;
+
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Date {
     pub day: u8,
