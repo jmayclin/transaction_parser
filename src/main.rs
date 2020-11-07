@@ -3,7 +3,7 @@ use std::process;
 use std::slice::Iter;
 use std::collections::HashMap;
 
-use transaction_parser::{Commodity, OptionType, Lot};
+use transaction_parser::{Commodity, OptionType, Date, Lot, Settlement};
 
 mod parser;
 
@@ -20,7 +20,8 @@ fn main() {
     };
 
     let transactions = parse("trade_history.csv").unwrap();
-    println!("{:?}", transactions);
+    println!("PARSED TRANSACTIONS");
+    //println!("{:?}", transactions);
     profit_loss(transactions);
 
 }
