@@ -1,4 +1,4 @@
-use super::{Commodity, Lot, OptionType, Settlement};
+use super::{Commodity, Lot, OptionType, Settlement, STARTING_BALANCE};
 
 use std::cmp;
 use std::collections::HashMap;
@@ -58,26 +58,44 @@ fn option_return(transactions: Vec<(Commodity, Lot)>, book: HashMap<&Commodity, 
     //println!("{:?}", stocks);
 }
 
-pub fn settle(lot_open: &mut Lot, lot_close: &mut Lot) -> i32 {
-    let settlement = cmp::min(lot_open.quantity.abs(), lot_close.quantity.abs());
+pub fn settle(lot_open: &mut Lot, lot_close: &mut Lot) -> (i32, i32) {
+    let quantity = cmp::min(lot_open.quantity.abs(), lot_close.quantity.abs());
     let (buy_price, sell_price) = if lot_open.quantity > 0 {
         (lot_open.price, lot_close.price)
     } else {
         (lot_close.price, lot_open.price)
     };
-    let profit = settlement * (sell_price as i32 - buy_price as i32);
+    let profit = quantity * (sell_price as i32 - buy_price as i32);
 
     if lot_open.quantity > 0 {
-        lot_open.quantity -= settlement;
-        lot_close.quantity += settlement;
+        lot_open.quantity -= quantity;
+        lot_close.quantity += quantity;
     } else {
-        lot_open.quantity += settlement;
-        lot_close.quantity -= settlement;
+        lot_open.quantity += quantity;
+        lot_close.quantity -= quantity;
     };
-    profit
+    (profit, quantity)
+}
+
+pub fn performance_table(settlements: &Vec<Settlement>) {
+    // ticker to settlement
+    let mut balance = STARTING_BALANCE;
+    let mut book: HashMap<&str, Vec<Settlement>> = HashMap::new();
+
+    for settlement in settlements {
+        let entry = book.entry(settlement.commodity.ticker()).or_default();
+        // if there is a settlement in
+
+    }
+    // if mismatched, then found collateral, otherwise stack
+
+    // iterate through settlements
+
 }
 
 pub fn settlement_table(settlements: &Vec<Settlement>) {
+
+    println!("SETTLEMENT TABLE");
     println!("{:^8} | {:^8} | {:^25} | {:^9}", "open", "close", "symbol", "PnL");
     println!("{:-^8}-+-{:-^8}-+-{:-^25}-+-{:-^9}", "", "", "", "");
     for settle in settlements {
@@ -102,12 +120,13 @@ pub fn profit_loss(transactions: Vec<(Commodity, Lot)>) -> (i32, Vec<Settlement>
             && ((lot.quantity > 0) != (entry[0].quantity > 0))
             && lot.quantity != 0
         {
-            let settle_profit = settle(&mut lot, &mut entry[0]);
+            let (settle_profit, settle_quantity) = settle(&mut lot, &mut entry[0]);
             profit += settle_profit;
             settlements.push(Settlement {
                 open: entry[0].date,
                 close: lot.date,
                 commodity: commodity.clone(),
+                quantity: settle_quantity,
                 profit: settle_profit,
             });
 
@@ -157,10 +176,12 @@ mod tests {
 
     #[test]
     fn settlement() {
-        let profit1 = settle(&mut lot_buy1.clone(), &mut lot_sell.clone());
-        let profit2 = settle(&mut lot_buy2.clone(), &mut lot_sell.clone());
+        let (profit1, q1) = settle(&mut lot_buy1.clone(), &mut lot_sell.clone());
+        let (profit2, q2) = settle(&mut lot_buy2.clone(), &mut lot_sell.clone());
         assert_eq!(profit1, 72300);
         assert_eq!(profit2, -100000);
+        assert_eq!(q1, 100);
+        assert_eq!(q2, 100);
 
         assert_eq!(
             settle(&mut lot_buy1.clone(), &mut lot_sell.clone()),
@@ -180,7 +201,7 @@ mod tests {
             (stock.clone(), lot_buy2),
             (stock.clone(), lot_sell),
         ];
-        let profit = profit_loss(transactions);
+        let (profit, _settlements) = profit_loss(transactions);
         assert_eq!(profit, -27700);
     }
 }

@@ -4,7 +4,7 @@ pub mod analyzer;
 
 use std::fmt;
 
-pub const STARTING_EQUITY: i32 = 33282000;
+pub const STARTING_BALANCE: i32 = 3282000;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Date {
@@ -24,6 +24,7 @@ pub struct Settlement {
     pub open: Date,
     pub close: Date,
     pub commodity: Commodity,
+    pub quantity: i32,
     pub profit: i32,
 }
 
@@ -62,8 +63,29 @@ pub enum Commodity {
 impl fmt::Display for Commodity {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Commodity::Option{ticker:t, contract: c, strike: s, expiration: e} => write!(f, "{}_{}_{}_{}", t, c, s, e),
+            Commodity::Option{ticker:t, contract: c, strike: s, expiration: e} => write!(f, "{}_{}_{}.{}_{}", t, c, s / 10000, s % 10000 / 100, e),
             Commodity::Stock(ticker) => write!(f, "{}", ticker),
         }
+    }
+}
+
+impl Commodity {
+    fn ticker(&self) -> &str {
+        match self {
+            Commodity::Option{ticker:t, contract: _, strike: _, expiration: _} => t,
+            Commodity::Stock(t) => t,
+        }
+    }
+
+    fn same_instrument(&self, other: &Commodity) -> bool {
+        let instrument = match self {
+            Commodity::Option{ticker:_, contract: _, strike: _, expiration: _} => "option",
+            Commodity::Stock(_) => "stock",
+        };
+        let instrument_other = match other {
+            Commodity::Option{ticker:_, contract: _, strike: _, expiration: _} => "option",
+            Commodity::Stock(_) => "stock",
+        };
+        instrument == instrument_other
     }
 }
